@@ -1,0 +1,676 @@
+<title>Noor AI Prototype</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@400;500;600&display=swap">
+<style>
+/* Layout: a phone-sized app. Full bleed on small screens, framed beside a short guide on wide ones. Dark-first, violet ground with the logo's gold star as the one warm accent. */
+:root{
+  --bg:#0E0A1F; --surface:#181230; --surface2:#231A44; --line:#33285B;
+  --fg:#F2EEFC; --muted:#AAA0CE;
+  --accent:#A78BFA; --accent-fill:#7C5CF0; --on-accent:#FFFFFF;
+  --gold:#F2B866; --good:#5BD6A0; --calm:#7FB4FF; --bad:#FF8A98;
+  --scrim:rgba(5,3,14,.6); --shadow:0 30px 80px rgba(0,0,0,.55);
+  --display:'Cormorant Garamond','Iowan Old Style',Georgia,serif;
+  --body:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#F6F3FF; --surface:#FFFFFF; --surface2:#EDE7FF; --line:#DCD3F5;
+    --fg:#1C1438; --muted:#5F5586;
+    --accent:#6D4AE0; --accent-fill:#6D4AE0; --on-accent:#FFFFFF;
+    --gold:#9A5A08; --good:#17795A; --calm:#2A63C2; --bad:#C0344C;
+    --scrim:rgba(28,20,56,.45); --shadow:0 30px 70px rgba(60,40,120,.22);
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#F6F3FF; --surface:#FFFFFF; --surface2:#EDE7FF; --line:#DCD3F5;
+  --fg:#1C1438; --muted:#5F5586;
+  --accent:#6D4AE0; --accent-fill:#6D4AE0; --on-accent:#FFFFFF;
+  --gold:#9A5A08; --good:#17795A; --calm:#2A63C2; --bad:#C0344C;
+  --scrim:rgba(28,20,56,.45); --shadow:0 30px 70px rgba(60,40,120,.22);
+  color-scheme:light;
+}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+h1,h2,h3,p,ul{margin:0;padding:0}
+ul{list-style:none}
+
+.stage{height:100%;display:block}
+.guide{display:none}
+.phone{position:relative;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);width:100%;height:100%}
+@media (min-width:900px){
+  .stage{display:flex;align-items:center;justify-content:center;gap:72px;padding:24px 32px}
+  .guide{display:block;width:380px;flex:none}
+  .phone{width:390px;height:min(820px,100%);border-radius:44px;border:1px solid var(--line);box-shadow:var(--shadow)}
+}
+
+/* Guide (wide screens) */
+.guide .wm{font-size:44px}
+.guide h1{font-family:var(--display);font-size:40px;line-height:1.05;font-weight:600;margin-top:28px;text-wrap:balance}
+.guide .lead{color:var(--muted);margin-top:12px;max-width:34ch}
+.guide h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500;margin:32px 0 10px}
+.guide ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.guide li{padding-left:4px}
+.guide .mods{display:flex;flex-wrap:wrap;gap:8px}
+.guide .mods span{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--muted)}
+.guide .fine{margin-top:28px;font-size:13px;color:var(--muted)}
+
+/* App chrome */
+.view{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:20px 20px 28px;-webkit-overflow-scrolling:touch}
+.view.chatmode{display:flex;flex-direction:column;overflow:hidden;padding-bottom:12px}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px 8px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:54px;border-radius:14px;color:var(--muted);font-size:12px;font-weight:500}
+.tab[aria-current="page"]{color:var(--fg)}
+.tab[aria-current="page"] .ico{color:var(--accent)}
+.tab.noor .orb{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--surface2);border:1px solid var(--gold);color:var(--gold)}
+.tab.noor[aria-current="page"] .orb{background:var(--gold);color:var(--bg)}
+.ico{display:block;flex:none}
+
+/* Type */
+.wm{font-family:var(--display);font-size:26px;font-weight:700;letter-spacing:.01em;line-height:1}
+.wm b{font-family:var(--body);font-weight:600;font-size:.62em;letter-spacing:.14em;color:var(--accent);margin-left:6px}
+.brand{display:flex;align-items:center;gap:8px;color:var(--gold)}
+.brand .wm{color:var(--fg)}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.date{font-size:13px;color:var(--muted)}
+.hello{font-family:var(--display);font-size:34px;line-height:1.05;font-weight:600;text-wrap:balance}
+.title{font-family:var(--display);font-size:36px;line-height:1.05;font-weight:600}
+.sub{color:var(--muted);font-size:14px;margin-top:4px}
+.lbl{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:500}
+h3.lbl{margin:26px 0 6px}
+.empty{color:var(--muted);padding:14px 0}
+.note{color:var(--muted);font-size:13px;margin-top:10px}
+.err{color:var(--bad);font-size:13px;margin-top:8px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:12px;background:var(--accent-fill);color:var(--on-accent);font-weight:600;font-size:15px}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--fg)}
+.btn.wide{width:100%}
+.link{color:var(--accent);font-weight:500;min-height:44px;display:inline-flex;align-items:center}
+.chip{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:14px}
+.chip[aria-pressed="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--on-accent)}
+
+/* Persona */
+.persona{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:16px}
+.persona span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+.persona button{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line);font-size:14px;color:var(--muted)}
+.persona button[aria-pressed="true"]{background:var(--surface2);color:var(--fg);border-color:var(--accent)}
+
+/* Balance */
+.balance{display:flex;align-items:center;gap:22px;margin-top:22px}
+.ring{position:relative;width:132px;height:132px;flex:none}
+.ring .trk{fill:none;stroke:var(--line);stroke-width:10}
+.ring .prg{fill:none;stroke:var(--accent);stroke-width:10;stroke-linecap:round}
+.rc{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rc b{font-family:var(--display);font-size:46px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums}
+.rc small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.pil{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+.pil li{display:grid;grid-template-columns:1fr auto;gap:4px 8px;font-size:13px}
+.pil li b{font-weight:600;font-variant-numeric:tabular-nums}
+.pil .bar{grid-column:1/-1}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px}
+
+/* Noor suggestion */
+.noor{margin-top:24px;padding:18px;border-radius:20px;background:var(--surface2);border:1px solid var(--line)}
+.noor .nh{display:flex;align-items:center;gap:8px;color:var(--gold);font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:500}
+.noor h2{font-family:var(--display);font-size:26px;line-height:1.1;font-weight:600;margin-top:10px;text-wrap:balance}
+.noor p{color:var(--muted);margin:8px 0 14px}
+
+/* Mood */
+.moods{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}
+.moods button{min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:13px;text-align:center}
+.moods button[aria-pressed="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--on-accent);font-weight:600}
+
+/* Rows */
+.row{display:flex;align-items:center;gap:14px;width:100%;min-height:58px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row .rt{flex:1;min-width:0;display:flex;flex-direction:column}
+.row .rt b{font-weight:500}
+.row .rt small{color:var(--muted);font-size:13px}
+.row[aria-pressed="true"] .rt b{color:var(--muted);text-decoration:line-through}
+.chk{width:28px;height:28px;border-radius:50%;border:2px solid var(--muted);display:grid;place-items:center;flex:none;color:transparent}
+.row[aria-pressed="true"] .chk{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--on-accent)}
+.rowstatic{display:flex;align-items:center;gap:14px;min-height:58px;padding:10px 0;border-bottom:1px solid var(--line)}
+.rowstatic .rt{flex:1;min-width:0;display:flex;flex-direction:column}
+.rowstatic .rt small{color:var(--muted);font-size:13px}
+
+/* Segmented control */
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--surface);border:1px solid var(--line);margin:16px 0 8px}
+.seg button{min-height:44px;border-radius:10px;text-align:center;color:var(--muted);font-weight:500}
+.seg button[aria-selected="true"]{background:var(--surface2);color:var(--fg)}
+
+/* Habits */
+.streak{display:flex;align-items:center;gap:4px;color:var(--gold);font-weight:600;font-variant-numeric:tabular-nums;flex:none}
+.dots{display:flex;gap:4px;margin-top:6px}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots i.on{background:var(--good)}
+.dots i.today{outline:1px solid var(--muted);outline-offset:2px}
+
+/* Timer */
+.timer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:14px 0 4px;padding:16px;border-radius:18px;background:var(--surface2);border:1px solid var(--line)}
+.tm{font-family:var(--display);font-size:48px;line-height:1;font-weight:600;font-variant-numeric:tabular-nums;margin-top:4px}
+.tbtns{display:flex;gap:8px}
+
+/* Goals */
+.goal{padding:14px 0;border-bottom:1px solid var(--line)}
+.goal .gh{display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.goal .gh b{font-weight:500}
+.goal .gh span{font-variant-numeric:tabular-nums;font-weight:600}
+.goal small{color:var(--muted);font-size:13px}
+.goal .bar{margin:10px 0}
+.goal .bar i{background:var(--accent)}
+.goal .gf{display:flex;justify-content:space-between;align-items:center}
+.mini{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid var(--line);font-weight:500}
+
+/* Money */
+.mhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.big{font-family:var(--display);font-size:58px;line-height:1;font-weight:600;margin-top:18px;font-variant-numeric:tabular-nums}
+.meter{position:relative;height:10px;border-radius:99px;background:var(--line);margin-top:16px}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--gold)}
+.meter u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--fg);text-decoration:none;border-radius:2px}
+.cat{display:grid;grid-template-columns:78px 1fr auto;gap:10px;align-items:center;padding:6px 0;font-size:14px}
+.cat .bar{height:10px}
+.cat .bar i{background:var(--accent)}
+.cat b{font-weight:500;font-variant-numeric:tabular-nums;min-width:64px;text-align:right}
+.tx b{font-variant-numeric:tabular-nums;font-weight:500}
+
+/* Vault */
+.lockline{display:flex;align-items:center;gap:6px}
+.scan{margin:16px 0 4px;padding:16px;border-radius:18px;border:1px dashed var(--accent);background:var(--surface)}
+.scan p{color:var(--muted);margin:6px 0 14px}
+.prog{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:12px}
+.prog i{display:block;height:100%;width:0;background:var(--accent);animation:fill 1.5s ease-out forwards}
+@keyframes fill{to{width:100%}}
+.fields{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:12px 0 14px}
+.fields dt{color:var(--muted);font-size:13px}
+.fields dd{margin:0;font-weight:500}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px}
+.tag{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:3px 10px;color:var(--muted);flex:none}
+
+/* Chat */
+.chathead{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.badge{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:4px 10px;color:var(--muted)}
+.chatlog{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:16px 0}
+.msg{max-width:86%;padding:12px 14px;border-radius:18px;line-height:1.45}
+.msg.noor{align-self:flex-start;background:var(--surface2);border-bottom-left-radius:6px}
+.msg.me{align-self:flex-end;background:var(--accent-fill);color:var(--on-accent);border-bottom-right-radius:6px}
+.msg .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.typing{display:flex;gap:5px;padding:14px 16px}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+.sugg{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px}
+.sugg .chip{flex:none}
+.composer{display:flex;align-items:center;gap:8px}
+.composer input{flex:1;min-width:0;min-height:48px;padding:0 16px;border-radius:24px;border:1px solid var(--line);background:var(--surface);outline-offset:2px}
+.composer input::placeholder{color:var(--muted)}
+.mic,.send{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;flex:none}
+.mic{border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.mic.on{background:var(--gold);color:var(--bg);border-color:var(--gold);animation:pulse 1s infinite}
+.send{background:var(--accent-fill);color:var(--on-accent)}
+@keyframes pulse{50%{box-shadow:0 0 0 8px transparent;transform:scale(1.06)}}
+
+/* Sheet, toast */
+.sheet-back{position:absolute;inset:0;background:var(--scrim);z-index:4}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:5;max-height:88%;overflow:auto;padding:22px 20px 24px;background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:26px 26px 0 0}
+.sheet h2{font-family:var(--display);font-size:30px;line-height:1.1;font-weight:600;margin-bottom:12px}
+.sheet label,.sheet .lbl{display:block;margin:16px 0 8px}
+.sheet input{width:100%;min-height:52px;padding:0 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:22px;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.srow{display:flex;gap:8px;margin-top:22px}
+.srow .btn{flex:1}
+.stage-orb{display:grid;place-items:center;height:220px}
+.breath{width:170px;height:170px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,var(--accent),var(--accent-fill));color:var(--on-accent);font-family:var(--display);font-size:24px;font-weight:600;animation:breathe 8s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(.62)}50%{transform:scale(1)}}
+.toast{position:absolute;left:50%;bottom:84px;z-index:6;max-width:88%;padding:10px 16px;border-radius:999px;background:var(--fg);color:var(--bg);font-size:14px;font-weight:500;opacity:0;transform:translate(-50%,8px);transition:opacity .2s,transform .2s;pointer-events:none;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion: reduce){
+  .breath{animation:none;transform:scale(.85)}
+  .prog i{animation:none;width:100%}
+  .typing span,.mic.on{animation:none}
+  .toast{transition:none}
+}
+</style>
+
+<div class="stage">
+  <aside class="guide" aria-label="About this prototype">
+    <div class="brand"><svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1C12.8 7.5 16.5 11.2 23 12C16.5 12.8 12.8 16.5 12 23C11.2 16.5 7.5 12.8 1 12C7.5 11.2 11.2 7.5 12 1Z"/></svg><span class="wm">Noor<b>AI</b></span></div>
+    <h1>Live smarter. Live calmer.</h1>
+    <p class="lead">A clickable demo of the Noor AI app, built from the pitch deck. Everything on screen is sample data.</p>
+    <h2>Try this</h2>
+    <ol>
+      <li>Tap a mood on Today and watch Noor's suggestion change.</li>
+      <li>Open Plan, tick a habit, and watch the Balance score move.</li>
+      <li>Add an expense in Money and see the budget update.</li>
+      <li>Scan a bill in Vault, then add its due date to your plan.</li>
+      <li>Ask Noor about your budget, or tap the mic.</li>
+    </ol>
+    <h2>Modules from the deck</h2>
+    <div class="mods"><span>AI assistant</span><span>Habit tracker</span><span>Money manager</span><span>Goal tracker</span><span>Study planner</span><span>Document vault</span><span>Voice commands</span><span>Emotional wellness</span></div>
+    <p class="fine">Replies are scripted, voice and scanning are simulated. Admin dashboard, cloud sync and the live LLM, speech and OCR services come in the development phase.</p>
+  </aside>
+
+  <div class="phone" id="phone">
+    <div class="view" id="view"></div>
+    <nav class="tabs" id="tabs" aria-label="Main"></nav>
+    <div class="sheet-back" id="sheetback" hidden data-act="closesheet"></div>
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Details" hidden></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var $=function(s){return document.querySelector(s)};
+var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var inr=function(n){return '₹'+Number(n).toLocaleString('en-IN')};
+var clamp=function(n,a,b){return Math.max(a,Math.min(b,n))};
+var pct=function(a,b){return b?Math.round(a/b*100):0};
+
+var now=new Date();
+var dom=now.getDate();
+var dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+var monthName=now.toLocaleString('en-IN',{month:'long'});
+var dateStr=now.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+var hr=now.getHours();
+var greet=hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+
+var I={
+ home:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>',
+ plan:'<rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 9l2 2 3.5-4M8 16h8"/>',
+ money:'<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16 15h2"/>',
+ vault:'<rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 018 0v3"/>',
+ mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>',
+ send:'<path d="M4 12l16-8-6 16-3-6.5L4 12z"/>',
+ flame:'<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 01-10 0c0-2 1-3.2 2-4.2.2 1.4 1 2 1.8 2.2C10.5 8 11 5.5 12 3z"/>',
+ check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+ scan:'<path d="M4 8V6a2 2 0 012-2h2M16 4h2a2 2 0 012 2v2M20 16v2a2 2 0 01-2 2h-2M8 20H6a2 2 0 01-2-2v-2M4 12h16"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ lock:'<rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 018 0v3"/>'
+};
+function ico(n,s){s=s||22;return '<svg class="ico" width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+I[n]+'</svg>'}
+function star(s){return '<svg class="ico" width="'+s+'" height="'+s+'" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1C12.8 7.5 16.5 11.2 23 12C16.5 12.8 12.8 16.5 12 23C11.2 16.5 7.5 12.8 1 12C7.5 11.2 11.2 7.5 12 1Z"/></svg>'}
+
+var MOODS=[{v:1,l:'Drained'},{v:2,l:'Low'},{v:3,l:'Okay'},{v:4,l:'Good'},{v:5,l:'Great'}];
+var CALM={1:25,2:45,3:65,4:85,5:100};
+var CATS=['Food','Transport','Learning','Home','Fun'];
+
+var PERSONAS={
+ student:{label:'Student',name:'Zara',sub:'BA Economics, semester 5',seg:'Study',budget:6000,
+  tasks:[
+   {id:'t1',t:'Macroeconomics: IS-LM revision',time:'09:30',min:45,done:true},
+   {id:'t2',t:'Data structures: binary trees practice',time:'11:00',min:60,done:false},
+   {id:'t3',t:'Submit fee receipt to the department',time:'14:00',min:10,done:false},
+   {id:'t4',t:'Read 15 pages for seminar',time:'17:30',min:30,done:false}],
+  habits:[
+   {id:'h1',n:'Drink 8 glasses of water',tg:'Daily',streak:6,week:[1,1,1,0,1,1],done:true},
+   {id:'h2',n:'Walk for 20 minutes',tg:'Daily',streak:3,week:[0,1,1,1,0,1],done:false},
+   {id:'h3',n:'Read for 15 minutes',tg:'Daily',streak:9,week:[1,1,1,1,1,1],done:true},
+   {id:'h4',n:'Sleep before 11 pm',tg:'Nightly',streak:4,week:[1,0,1,1,1,1],done:false}],
+  goals:[
+   {id:'g1',t:'Finish the Data Structures syllabus',due:'30 Nov',pct:62},
+   {id:'g2',t:'Save for a laptop bag',due:'31 Dec',pct:40},
+   {id:'g3',t:'Reach a 8.5 CGPA this semester',due:'Jan',pct:70}],
+  cats:{Food:980,Transport:410,Learning:520,Home:120,Fun:120},
+  txns:[{t:'Canteen lunch',c:'Food',a:140,d:'Today'},{t:'Metro card top-up',c:'Transport',a:200,d:'Yesterday'},{t:'Printed notes',c:'Learning',a:85,d:'Wed'}],
+  docs:[{n:'Fee receipt, semester 4',k:'Fees',d:'12 Aug'},{n:'Scholarship letter',k:'Letter',d:'3 Sep'},{n:'Hall ticket, mid-terms',k:'Exam',d:'28 Sep'}]},
+ professional:{label:'Professional',name:'Arjun',sub:'Product analyst',seg:'Work',budget:40000,
+  tasks:[
+   {id:'t1',t:'Review sprint board with the team',time:'09:30',min:30,done:true},
+   {id:'t2',t:'Draft the Q3 report outline',time:'11:00',min:60,done:false},
+   {id:'t3',t:'Pay the electricity bill',time:'13:30',min:10,done:false},
+   {id:'t4',t:'Prepare Friday client update',time:'16:00',min:45,done:false}],
+  habits:[
+   {id:'h1',n:'Drink 8 glasses of water',tg:'Daily',streak:5,week:[1,1,0,1,1,1],done:true},
+   {id:'h2',n:'Stretch for 5 minutes',tg:'Workdays',streak:8,week:[1,1,1,1,1,1],done:false},
+   {id:'h3',n:'No screens after 10:30 pm',tg:'Nightly',streak:2,week:[0,0,1,1,0,1],done:false},
+   {id:'h4',n:'Plan tomorrow in 5 minutes',tg:'Evening',streak:11,week:[1,1,1,1,1,1],done:true}],
+  goals:[
+   {id:'g1',t:'Finish the analytics certification',due:'15 Dec',pct:45},
+   {id:'g2',t:'Build a 3-month emergency fund',due:'31 Mar',pct:55},
+   {id:'g3',t:'Run 5 km without stopping',due:'31 Jan',pct:30}],
+  cats:{Food:4800,Transport:2600,Learning:1900,Home:3700,Fun:1200},
+  txns:[{t:'Team lunch',c:'Food',a:620,d:'Today'},{t:'Cab to office',c:'Transport',a:340,d:'Yesterday'},{t:'Course subscription',c:'Learning',a:1200,d:'Tue'}],
+  docs:[{n:'Rent agreement',k:'Home',d:'1 Apr'},{n:'Insurance policy',k:'Cover',d:'18 Jun'},{n:'Form 16',k:'Tax',d:'30 Jun'}]},
+ family:{label:'Family',name:'Meera',sub:'Home and family',seg:'Home',budget:55000,
+  tasks:[
+   {id:'t1',t:'School drop-off',time:'07:45',min:30,done:true},
+   {id:'t2',t:'Plan the grocery list for the week',time:'10:30',min:20,done:false},
+   {id:'t3',t:'Pay the school fee instalment',time:'12:00',min:10,done:false},
+   {id:'t4',t:'Plan Saturday family dinner',time:'18:00',min:30,done:false}],
+  habits:[
+   {id:'h1',n:'Family dinner together',tg:'Daily',streak:12,week:[1,1,1,1,1,1],done:false},
+   {id:'h2',n:'Walk for 20 minutes',tg:'Daily',streak:3,week:[1,0,1,0,1,1],done:true},
+   {id:'h3',n:'Drink 8 glasses of water',tg:'Daily',streak:4,week:[1,1,0,1,1,1],done:true},
+   {id:'h4',n:'Screen-free hour with the kids',tg:'Evening',streak:6,week:[1,1,1,0,1,1],done:false}],
+  goals:[
+   {id:'g1',t:'Plan the family trip',due:'20 Dec',pct:35},
+   {id:'g2',t:'Fund the school fees',due:'30 Nov',pct:70},
+   {id:'g3',t:'Cook at home five nights a week',due:'Ongoing',pct:60}],
+  cats:{Food:8200,Transport:2900,Learning:3600,Home:3800,Fun:1300},
+  txns:[{t:'Vegetables and fruit',c:'Food',a:780,d:'Today'},{t:'Auto fare',c:'Transport',a:120,d:'Yesterday'},{t:'Art class fee',c:'Learning',a:1500,d:'Mon'}],
+  docs:[{n:'School admission form',k:'School',d:'5 Jun'},{n:'Vaccination card',k:'Health',d:'20 Jul'},{n:'Electricity bill, September',k:'Bills',d:'2 Oct'}]}
+};
+
+var D={};
+function P(){
+  if(!D[S.persona]) D[S.persona]=JSON.parse(JSON.stringify(PERSONAS[S.persona]));
+  return D[S.persona];
+}
+var S={tab:'today',seg:'habits',persona:'student',mood:null,calmBonus:0,cat:'Food',scan:null,scanAdded:false,listening:false,chat:[],
+  timer:{left:1500,run:false,iv:null},sheetOpener:null,breathIv:null};
+
+function spentTotal(){var c=P().cats,t=0;for(var k in c)t+=c[k];return t}
+function topCat(){var c=P().cats,b=['',0];for(var k in c){if(c[k]>b[1])b=[k,c[k]]}return b}
+function pillars(){
+  var p=P();
+  var prod=pct(p.tasks.filter(function(x){return x.done}).length,p.tasks.length);
+  var health=pct(p.habits.filter(function(x){return x.done}).length,p.habits.length);
+  var frac=spentTotal()/p.budget, pace=dom/dim;
+  var fin=clamp(Math.round(100*(1-Math.max(0,frac-pace)*2.5)),0,100);
+  var calm=clamp((S.mood?CALM[S.mood]:60)+S.calmBonus,0,100);
+  return {prod:prod,health:health,fin:fin,calm:calm,total:Math.round((prod+health+fin+calm)/4)};
+}
+function rec(){
+  var p=P(),q=pillars();
+  var undone=p.tasks.filter(function(x){return !x.done});
+  var hUndone=p.habits.filter(function(x){return !x.done});
+  var hDone=p.habits.length-hUndone.length;
+  if(S.mood&&S.mood<=2){
+    var ml=MOODS.filter(function(m){return m.v===S.mood})[0].l.toLowerCase();
+    return {kind:'Calm',title:'Take two minutes before your next task',body:'You checked in as '+ml+'. A short breathing break first, then one thing at a time.',cta:'Start breathing',act:'breathe'};
+  }
+  var low=['prod','health','fin','calm'].reduce(function(a,k){return q[k]<q[a]?k:a},'prod');
+  if(q[low]>=80) return {kind:'On track',title:'You are in good balance today',body:'All four areas are healthy. A quick look at tomorrow keeps it that way.',cta:'Open plan',act:'goto:plan:work'};
+  if(low==='prod'&&undone.length){
+    var n=undone[0];
+    return {kind:'Focus',title:'Start with '+n.t,body:n.min+' minutes. Finishing it lifts Productivity to '+pct(p.tasks.length-undone.length+1,p.tasks.length)+'%.',cta:'Open plan',act:'goto:plan:work'};
+  }
+  if(low==='health'&&hUndone.length){
+    return {kind:'Health',title:'Next habit: '+hUndone[0].n,body:hDone+' of '+p.habits.length+' habits done today. Logging this one lifts Health to '+pct(hDone+1,p.habits.length)+'%.',cta:'Open habits',act:'goto:plan:habits'};
+  }
+  if(low==='fin'){
+    var pc=Math.round(spentTotal()/p.budget*100);
+    return {kind:'Money',title:'Spending is ahead of the month',body:'You have used '+pc+'% of the budget and the month is '+Math.round(dom/dim*100)+'% through. '+topCat()[0]+' is the biggest category.',cta:'See Money',act:'goto:money'};
+  }
+  return {kind:'Calm',title:'How are you feeling today?',body:'A quick check-in helps me tune the rest of your plan.',cta:'Check in',act:'checkin'};
+}
+
+/* ---------- views ---------- */
+function taskRow(t){
+  return '<button class="row" data-act="task" data-id="'+t.id+'" aria-pressed="'+t.done+'" aria-label="'+esc(t.t)+'"><span class="chk">'+ico('check',16)+'</span><span class="rt"><b>'+esc(t.t)+'</b><small>'+esc(t.time)+(t.min?' · '+t.min+' min':'')+'</small></span></button>';
+}
+var PIL=[['prod','Productivity','--accent'],['health','Health','--good'],['fin','Finance','--gold'],['calm','Calm','--calm']];
+
+function viewToday(){
+  var p=P(),q=pillars(),r=rec();
+  var up=p.tasks.filter(function(t){return !t.done}).slice(0,3);
+  var C=2*Math.PI*56;
+  var pers=Object.keys(PERSONAS).map(function(k){return '<button data-act="persona" data-v="'+k+'" aria-pressed="'+(k===S.persona)+'">'+PERSONAS[k].label+'</button>'}).join('');
+  var pil=PIL.map(function(x){return '<li><span>'+x[1]+'</span><b>'+q[x[0]]+'</b><div class="bar"><i style="width:'+q[x[0]]+'%;background:var('+x[2]+')"></i></div></li>'}).join('');
+  var moods=MOODS.map(function(m){return '<button data-act="mood" data-v="'+m.v+'" aria-pressed="'+(S.mood===m.v)+'">'+m.l+'</button>'}).join('');
+  return '<header class="top"><div class="brand">'+star(22)+'<span class="wm">Noor<b>AI</b></span></div><span class="date">'+dateStr+'</span></header>'
+  +'<h1 class="hello">'+greet+', '+esc(p.name)+'</h1><p class="sub">'+esc(p.sub)+'</p>'
+  +'<div class="persona" role="group" aria-label="Demo persona"><span>Demo as</span>'+pers+'</div>'
+  +'<section class="balance" aria-label="Life balance"><div class="ring"><svg viewBox="0 0 132 132" width="132" height="132" aria-hidden="true"><circle cx="66" cy="66" r="56" class="trk"/><circle cx="66" cy="66" r="56" class="prg" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+(C*(1-q.total/100)).toFixed(1)+'" transform="rotate(-90 66 66)"/></svg><div class="rc"><b>'+q.total+'</b><small>Balance</small></div></div><ul class="pil">'+pil+'</ul></section>'
+  +'<section class="noor" aria-label="Suggestion from Noor"><div class="nh">'+star(14)+'<span>Noor suggests · '+r.kind+'</span></div><h2>'+esc(r.title)+'</h2><p>'+esc(r.body)+'</p><button class="btn" data-act="'+r.act+'">'+r.cta+'</button></section>'
+  +'<h3 class="lbl">How are you feeling?</h3><div class="moods" id="mood" role="group" aria-label="Mood">'+moods+'</div>'
+  +'<h3 class="lbl">Up next</h3>'+(up.length?up.map(taskRow).join(''):'<p class="empty">Everything planned for today is done.</p>')
+  +'<button class="link" data-act="goto:plan:work">See full plan</button>';
+}
+
+function fmt(s){var m=Math.floor(s/60),x=s%60;return (m<10?'0':'')+m+':'+(x<10?'0':'')+x}
+
+function viewHabits(){
+  var p=P(),n=p.habits.filter(function(h){return h.done}).length;
+  return '<p class="note" style="margin:6px 0 0">'+n+' of '+p.habits.length+' done today. Tap a habit to log it.</p>'
+  +p.habits.map(function(h){
+    var dots=h.week.map(function(x){return '<i class="'+(x?'on':'')+'"></i>'}).join('')+'<i class="today '+(h.done?'on':'')+'"></i>';
+    return '<button class="row" data-act="habit" data-id="'+h.id+'" aria-pressed="'+h.done+'" aria-label="'+esc(h.n)+'"><span class="chk">'+ico('check',16)+'</span><span class="rt"><b>'+esc(h.n)+'</b><small>'+esc(h.tg)+'</small><span class="dots" aria-hidden="true">'+dots+'</span></span><span class="streak">'+ico('flame',18)+(h.streak+(h.done?1:0))+'</span></button>';
+  }).join('');
+}
+function viewWork(){
+  var p=P();
+  return '<div class="timer"><div><span class="lbl">Focus session</span><div class="tm" id="tm">'+fmt(S.timer.left)+'</div></div><div class="tbtns"><button class="btn" data-act="timer">'+(S.timer.run?'Pause':'Start')+'</button><button class="btn ghost" data-act="treset">Reset</button></div></div>'
+  +'<h3 class="lbl">Today’s schedule</h3>'+p.tasks.map(taskRow).join('');
+}
+function viewGoals(){
+  var p=P();
+  return p.goals.map(function(g){
+    return '<div class="goal"><div class="gh"><b>'+esc(g.t)+'</b><span>'+g.pct+'%</span></div><div class="bar" role="img" aria-label="'+g.pct+' percent complete"><i style="width:'+g.pct+'%"></i></div><div class="gf"><small>Due '+esc(g.due)+'</small>'+(g.pct>=100?'<small>Complete</small>':'<button class="mini" data-act="goal" data-id="'+g.id+'">Log +10%</button>')+'</div></div>';
+  }).join('');
+}
+function viewPlan(){
+  var p=P();
+  var segs=[['habits','Habits'],['work',p.seg],['goals','Goals']].map(function(s){return '<button role="tab" data-act="seg" data-v="'+s[0]+'" aria-selected="'+(S.seg===s[0])+'">'+s[1]+'</button>'}).join('');
+  return '<h1 class="title">Plan</h1><div class="seg" role="tablist" aria-label="Plan sections">'+segs+'</div>'
+  +(S.seg==='habits'?viewHabits():S.seg==='work'?viewWork():viewGoals());
+}
+
+function viewMoney(){
+  var p=P(),sp=spentTotal(),left=p.budget-sp,frac=sp/p.budget,pace=dom/dim;
+  var order=CATS.slice().sort(function(a,b){return p.cats[b]-p.cats[a]});
+  var max=p.cats[order[0]]||1;
+  var cats=order.map(function(c){return '<div class="cat"><span>'+c+'</span><div class="bar" role="img" aria-label="'+c+' '+inr(p.cats[c])+'"><i style="width:'+(p.cats[c]/max*100).toFixed(1)+'%"></i></div><b>'+inr(p.cats[c])+'</b></div>'}).join('');
+  var tx=p.txns.slice(0,6).map(function(t){return '<div class="rowstatic tx"><span class="rt"><b style="font-weight:500">'+esc(t.t)+'</b><small>'+esc(t.c)+' · '+esc(t.d)+'</small></span><b>−'+inr(t.a)+'</b></div>'}).join('');
+  var delta=Math.round((frac-pace)*p.budget);
+  return '<div class="mhead"><h1 class="title">Money</h1><button class="btn" data-act="expense">'+ico('plus',18)+'Add expense</button></div>'
+  +'<p class="lbl" style="margin-top:22px">'+monthName+' budget left</p><div class="big">'+inr(left)+'</div>'
+  +'<p class="sub">'+inr(sp)+' spent of '+inr(p.budget)+'</p>'
+  +'<div class="meter" role="img" aria-label="'+Math.round(frac*100)+' percent of budget used"><i style="width:'+Math.min(100,frac*100).toFixed(1)+'%"></i><u style="left:'+(pace*100).toFixed(1)+'%"></u></div>'
+  +'<p class="note">'+(frac>pace?'Ahead of pace by '+inr(delta)+'. ':'On pace for the month. ')+'The white tick marks how far through the month you are.</p>'
+  +'<h3 class="lbl">By category</h3>'+cats+'<h3 class="lbl">Recent</h3>'+tx;
+}
+
+function viewVault(){
+  var p=P();
+  var scan;
+  if(S.scan==='running'){
+    scan='<div class="scan" aria-live="polite"><b>Reading your document</b><p>Finding the amount, dates and sender.</p><div class="prog"><i></i></div></div>';
+  }else if(S.scan==='done'){
+    scan='<div class="scan"><span class="lbl">Sample scan result</span><dl class="fields"><dt>Document</dt><dd>Utility bill</dd><dt>Amount</dt><dd>'+inr(1860)+'</dd><dt>Due date</dt><dd>18 Oct</dd><dt>Category</dt><dd>Home</dd></dl><div class="btnrow"><button class="btn" data-act="savedoc">Save to vault</button><button class="btn ghost" data-act="addrem"'+(S.scanAdded?' disabled':'')+'>'+(S.scanAdded?'Added to plan':'Add due date to plan')+'</button></div></div>';
+  }else{
+    scan='<div class="scan"><b>Scan a bill or receipt</b><p>Noor reads the text, files the document and can add the due date to your plan.</p><button class="btn" data-act="scan">'+ico('scan',18)+'Scan a document</button></div>';
+  }
+  var docs=p.docs.map(function(d){return '<div class="rowstatic"><span class="rt"><b style="font-weight:500">'+esc(d.n)+'</b><small>Added '+esc(d.d)+'</small></span><span class="tag">'+esc(d.k)+'</span></div>'}).join('');
+  return '<h1 class="title">Vault</h1><p class="sub lockline">'+ico('lock',14)+'Private documents, searchable by what is inside</p>'+scan
+  +'<h3 class="lbl">'+p.docs.length+' documents</h3>'+docs;
+}
+
+function msgHtml(m){
+  var chips=(m.chips&&m.chips.length)?'<div class="chips">'+m.chips.map(function(c){return '<button class="chip" data-act="'+esc(c.a)+'">'+esc(c.l)+'</button>'}).join('')+'</div>':'';
+  return '<div class="msg '+m.role+'"><p>'+esc(m.text)+'</p>'+chips+'</div>';
+}
+var SUGG=['How is my budget?','What should I focus on?','I feel overwhelmed','How are my habits?'];
+function viewChat(){
+  var sg=SUGG.map(function(s){return '<button class="chip" data-act="ask" data-v="'+esc(s)+'">'+esc(s)+'</button>'}).join('');
+  return '<div class="chathead"><h1 class="title">Noor</h1><span class="badge">Demo: scripted replies</span></div>'
+  +'<div class="chatlog" id="chatlog" aria-live="polite">'+S.chat.map(msgHtml).join('')+'</div>'
+  +'<div class="sugg">'+sg+'</div>'
+  +'<form id="chatform" class="composer"><button type="button" class="mic" data-act="mic" aria-label="Speak to Noor (simulated)">'+ico('mic')+'</button><input id="chatin" autocomplete="off" placeholder="Ask about your plan, money or mood" aria-label="Message Noor"><button class="send" aria-label="Send message">'+ico('send')+'</button></form>';
+}
+
+var VIEWS={today:viewToday,plan:viewPlan,chat:viewChat,money:viewMoney,vault:viewVault};
+var TABS=[['today','Today','home'],['plan','Plan','plan'],['chat','Noor','star'],['money','Money','money'],['vault','Vault','vault']];
+
+function buildTabs(){
+  $('#tabs').innerHTML=TABS.map(function(t){
+    var icon=t[2]==='star'?'<span class="orb">'+star(20)+'</span>':ico(t[2]);
+    return '<button class="tab'+(t[0]==='chat'?' noor':'')+'" data-act="tab" data-v="'+t[0]+'"'+(S.tab===t[0]?' aria-current="page"':'')+'>'+icon+'<span>'+t[1]+'</span></button>';
+  }).join('');
+}
+function render(keep){
+  var v=$('#view'),st=v.scrollTop;
+  v.className='view'+(S.tab==='chat'?' chatmode':'');
+  v.innerHTML=VIEWS[S.tab]();
+  v.scrollTop=keep?st:0;
+  if(S.tab==='chat'){var l=$('#chatlog');if(l)l.scrollTop=l.scrollHeight}
+}
+function setTab(t){S.tab=t;buildTabs();render(false)}
+
+/* ---------- chat ---------- */
+function initChat(){
+  S.chat=[{role:'noor',text:'Hi '+P().name+', I’m Noor. I can see today’s plan, your habits, spending and documents. What should we sort out first?'}];
+}
+function reply(q){
+  var s=q.toLowerCase(),p=P(),sp=spentTotal();
+  var undone=p.tasks.filter(function(t){return !t.done});
+  if(/budget|spend|spent|money|expense|cost/.test(s)){
+    var pc=Math.round(sp/p.budget*100),top=topCat();
+    return {text:'You have used '+pc+'% of your '+inr(p.budget)+' budget ('+inr(sp)+' spent). '+top[0]+' is the largest category at '+inr(top[1])+'. '+(sp/p.budget>dom/dim?'Spending is a little ahead of the month, so a lighter week would bring it back on pace.':'You are on pace for the month.'),chips:[{l:'Open Money',a:'goto:money'},{l:'Add an expense',a:'expense'}]};
+  }
+  if(/stress|overwhelm|tired|calm|worried|too much/.test(s)){
+    return {text:'That sounds like a lot to carry. Let’s make the next hour smaller: a two-minute breathing reset, then only “'+(undone[0]?undone[0].t:'your next task')+'”. The rest can wait until you are ready.',chips:[{l:'Start breathing',a:'breathe'}]};
+  }
+  if(/plan|today|schedule|task|focus|next/.test(s)){
+    if(!undone.length) return {text:'Everything on today’s plan is done. Nice work. Want to look at tomorrow?',chips:[{l:'Open plan',a:'goto:plan:work'}]};
+    return {text:'Here is what is left today: '+undone.slice(0,3).map(function(t){return t.t+' at '+t.time}).join('; ')+'. I would start with the first one.',chips:[{l:'Open plan',a:'goto:plan:work'}]};
+  }
+  if(/habit|streak|routine/.test(s)){
+    var d=p.habits.filter(function(h){return h.done}).length,best=p.habits.reduce(function(a,h){return h.streak>a.streak?h:a},p.habits[0]);
+    return {text:d+' of '+p.habits.length+' habits are done today. Your longest streak is '+best.streak+' days for “'+best.n.toLowerCase()+'”.',chips:[{l:'Open habits',a:'goto:plan:habits'}]};
+  }
+  if(/goal|target|progress/.test(s)){
+    var g=p.goals.slice().sort(function(a,b){return b.pct-a.pct})[0];
+    return {text:'Your closest goal is “'+g.t+'” at '+g.pct+'%, due '+g.due+'. Logging today’s work moves it forward.',chips:[{l:'Open goals',a:'goto:plan:goals'}]};
+  }
+  if(/doc|vault|scan|receipt|bill|file/.test(s)){
+    return {text:'Your vault holds '+p.docs.length+' documents. Scan a bill or receipt and I will pull out the amount and due date for you.',chips:[{l:'Open Vault',a:'goto:vault'}]};
+  }
+  if(/^(hi|hello|hey)\b/.test(s)) return {text:'Hello '+p.name+'. Ask me about your plan, budget, habits or documents, or tell me how you are feeling.'};
+  return {text:'I can help with your plan, habits, money, documents and how you are feeling. Try one of the suggestions below.'};
+}
+function appendMsg(m){
+  var l=$('#chatlog');if(!l)return;
+  l.insertAdjacentHTML('beforeend',msgHtml(m));l.scrollTop=l.scrollHeight;
+}
+function typing(on){
+  var l=$('#chatlog');if(!l)return;
+  var t=$('#typing');
+  if(on&&!t){l.insertAdjacentHTML('beforeend','<div class="msg noor typing" id="typing"><span></span><span></span><span></span></div>');l.scrollTop=l.scrollHeight}
+  if(!on&&t)t.remove();
+}
+function send(text){
+  text=String(text).trim();if(!text)return;
+  var me={role:'me',text:text};S.chat.push(me);appendMsg(me);typing(true);
+  setTimeout(function(){
+    typing(false);
+    var r=reply(text),m={role:'noor',text:r.text,chips:r.chips};
+    S.chat.push(m);appendMsg(m);
+  },750);
+}
+
+/* ---------- sheets, toast, timer ---------- */
+var toastT;
+function toast(msg){
+  var t=$('#toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(function(){t.classList.remove('show')},2200);
+}
+function openSheet(html,label,focusSel){
+  S.sheetOpener=document.activeElement;
+  var sh=$('#sheet');sh.innerHTML=html;sh.setAttribute('aria-label',label);
+  sh.hidden=false;$('#sheetback').hidden=false;
+  var f=focusSel&&sh.querySelector(focusSel);if(f)f.focus();
+}
+function closeSheet(){
+  clearInterval(S.breathIv);S.breathIv=null;
+  $('#sheet').hidden=true;$('#sheetback').hidden=true;$('#sheet').innerHTML='';
+  var o=S.sheetOpener;S.sheetOpener=null;
+  if(o&&document.body.contains(o)&&o.focus)o.focus();
+}
+function breathe(){
+  openSheet('<h2>Two-minute reset</h2><p class="sub">Follow the circle. Breathe in for four seconds, out for four.</p><div class="stage-orb"><div class="breath" aria-hidden="true"><span id="breathtxt">Breathe in</span></div></div><div class="srow"><button class="btn ghost" data-act="closesheet">Close</button><button class="btn" data-act="breathdone">I feel calmer</button></div>','Breathing exercise','[data-act="breathdone"]');
+  var inn=true;
+  S.breathIv=setInterval(function(){inn=!inn;var e=$('#breathtxt');if(e)e.textContent=inn?'Breathe in':'Breathe out'},4000);
+}
+function expenseSheet(){
+  var cs=CATS.map(function(c){return '<button type="button" class="chip" data-act="cat" data-v="'+c+'" aria-pressed="'+(c===S.cat)+'">'+c+'</button>'}).join('');
+  openSheet('<form id="expform"><h2>Add expense</h2><label class="lbl" for="amt">Amount in rupees</label><input id="amt" inputmode="numeric" autocomplete="off" placeholder="250"><div class="lbl">Category</div><div class="chips" role="group" aria-label="Category">'+cs+'</div><p class="err" id="amterr" role="alert" hidden>Enter an amount above zero.</p><div class="srow"><button type="button" class="btn ghost" data-act="closesheet">Cancel</button><button class="btn">Save expense</button></div></form>','Add expense','#amt');
+}
+function paintTimer(){
+  var e=$('#tm');if(e)e.textContent=fmt(S.timer.left);
+  var b=document.querySelector('[data-act="timer"]');if(b)b.textContent=S.timer.run?'Pause':'Start';
+}
+function stopTimer(){clearInterval(S.timer.iv);S.timer.iv=null;S.timer.run=false}
+function toggleTimer(){
+  if(S.timer.run){stopTimer();paintTimer();return}
+  S.timer.run=true;
+  S.timer.iv=setInterval(function(){
+    S.timer.left--;
+    if(S.timer.left<=0){stopTimer();S.timer.left=1500;toast('Focus session complete')}
+    paintTimer();
+  },1000);
+  paintTimer();
+}
+
+/* ---------- actions ---------- */
+function act(a,el){
+  if(a.indexOf('goto:')===0){
+    var parts=a.split(':');if(parts[2])S.seg=parts[2];setTab(parts[1]);return;
+  }
+  var p=P(),id=el&&el.dataset?el.dataset.id:null;
+  switch(a){
+    case 'tab':setTab(el.dataset.v);break;
+    case 'persona':S.persona=el.dataset.v;S.mood=null;S.calmBonus=0;S.scan=null;S.scanAdded=false;initChat();render(true);break;
+    case 'mood':S.mood=+el.dataset.v;render(true);break;
+    case 'checkin':var m=$('#mood');if(m){m.scrollIntoView({block:'center',behavior:'smooth'});var b=m.querySelector('button');if(b)b.focus({preventScroll:true})}break;
+    case 'task':p.tasks.forEach(function(t){if(t.id===id)t.done=!t.done});render(true);break;
+    case 'habit':p.habits.forEach(function(h){if(h.id===id)h.done=!h.done});render(true);break;
+    case 'goal':p.goals.forEach(function(g){if(g.id===id)g.pct=Math.min(100,g.pct+10)});render(true);break;
+    case 'seg':S.seg=el.dataset.v;render(false);break;
+    case 'timer':toggleTimer();break;
+    case 'treset':stopTimer();S.timer.left=1500;paintTimer();break;
+    case 'breathe':breathe();break;
+    case 'breathdone':S.calmBonus=10;closeSheet();toast('Calm score updated');render(true);break;
+    case 'closesheet':closeSheet();break;
+    case 'expense':if(S.tab!=='money')setTab('money');expenseSheet();break;
+    case 'cat':S.cat=el.dataset.v;document.querySelectorAll('#sheet [data-act="cat"]').forEach(function(c){c.setAttribute('aria-pressed',String(c.dataset.v===S.cat))});break;
+    case 'scan':S.scan='running';render(true);setTimeout(function(){S.scan='done';if(S.tab==='vault')render(true)},1500);break;
+    case 'savedoc':p.docs.unshift({n:'Utility bill, October',k:'Bills',d:'Today'});S.scan=null;S.scanAdded=false;render(true);toast('Saved to your vault');break;
+    case 'addrem':if(!S.scanAdded){p.tasks.push({id:'t'+(p.tasks.length+1),t:'Pay the utility bill',time:'Due 18 Oct',min:10,done:false});S.scanAdded=true;render(true);toast('Added to your plan')}break;
+    case 'ask':if(S.tab!=='chat')setTab('chat');send(el.dataset.v);break;
+    case 'mic':
+      if(S.listening)break;
+      S.listening=true;el.classList.add('on');
+      var inp=$('#chatin');if(inp)inp.placeholder='Listening…';
+      setTimeout(function(){
+        S.listening=false;
+        var mc=document.querySelector('.mic');if(mc)mc.classList.remove('on');
+        var i2=$('#chatin');if(i2)i2.placeholder='Ask about your plan, money or mood';
+        send('How is my budget this month?');
+      },1600);
+      break;
+  }
+}
+
+var phone=$('#phone');
+phone.addEventListener('click',function(e){
+  var el=e.target.closest('[data-act]');
+  if(!el||el.disabled)return;
+  act(el.dataset.act,el);
+});
+phone.addEventListener('submit',function(e){
+  e.preventDefault();
+  if(e.target.id==='chatform'){
+    var i=$('#chatin');var v=i.value;i.value='';send(v);i.focus();
+  }
+  if(e.target.id==='expform'){
+    var amt=parseInt(($('#amt').value||'').replace(/[^0-9]/g,''),10);
+    if(!amt||amt<1){$('#amterr').hidden=false;$('#amt').focus();return}
+    var p=P();
+    p.cats[S.cat]+=amt;
+    p.txns.unshift({t:S.cat+' expense',c:S.cat,a:amt,d:'Today'});
+    closeSheet();render(true);toast('Expense added: '+inr(amt));
+  }
+});
+$('#sheet').addEventListener('keydown',function(e){if(e.key==='Escape')closeSheet()});
+
+initChat();buildTabs();render(false);
+})();
+</script>
